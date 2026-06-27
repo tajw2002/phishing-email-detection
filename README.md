@@ -56,8 +56,9 @@ PhishingEmail/
 
 ## Hinweis zu den Daten
 
-Der Datensatz (`data/`) und die trainierten Modelle (`models/`) sind nicht Teil der
-Abgabe, da sie automatisch durch die beiden Skripte erzeugt werden. Der verwendete
+Datensatz (`data/`) und trainierte Modelle (`models/`) sind hier im Repository
+enthalten, werden aber auch automatisch durch die beiden Skripte oben neu erzeugt –
+ein Löschen und Neuausführen liefert dieselben Ergebnisse. Der verwendete
 Enron-Spam-Korpus stammt aus:
 
 > Metsis, V., Androutsopoulos, I., & Paliouras, G. (2006). Spam filtering with naive

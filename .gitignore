@@ -1,7 +1,3 @@
-# Automatisch erzeugte Tool-Ordner (Claude Code Konfiguration, nicht Teil des Projekts)
-.claude/
-.c/
-
 # Python
 __pycache__/
 *.pyc
@@ -9,10 +5,3 @@ __pycache__/
 
 # macOS
 .DS_Store
-
-# Grosse, automatisch reproduzierbare Daten (werden von scripts/download_data.py erzeugt)
-data/raw/
-data/emails.csv
-
-# Trainierte Modelle (werden von main.py erzeugt, zu gross fuer Git)
-models/*.pkl
