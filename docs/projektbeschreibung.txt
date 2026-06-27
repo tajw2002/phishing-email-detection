@@ -1,0 +1,230 @@
+Tarek Al Jawabra
+Matrikelnummer: 888997
+Hochschule Kaiserslautern, Campus Zweibrücken
+Studiengang Angewandte Informatik – Hausarbeit Sicherheit von IT-Systemen, SoSe 2026
+
+========================================================================
+PROJEKTBESCHREIBUNG – MEIN VORGEHEN SCHRITT FÜR SCHRITT
+========================================================================
+
+------------------------------------------------------------------------
+1. THEMA UND ZIELSETZUNG
+------------------------------------------------------------------------
+
+Das Thema "Erkennung von Phishing-E-Mails durch datenbasierte Analyse"
+wurde mit dem Dozenten abgestimmt. Ziel war es, sowohl die theoretischen
+Grundlagen von Phishing aufzuarbeiten als auch ein funktionierendes,
+datengetriebenes Erkennungsprogramm in Python zu entwickeln, das zeigt
+ob und wie gut sich Phishing-/Spam-Mails anhand einfacher textbasierter
+Merkmale automatisiert erkennen lassen.
+
+Die Aufgabenstellung hat für den praktischen Teil konkrete Vorgaben
+gemacht: Verwendung eines echten, öffentlichen Datensatzes (Enron Spam
+Dataset oder SpamAssassin Public Corpus), eine eigene Wortlisten-Analyse
+vor der Klassifikation, zusätzliche Erkennungsmerkmale jenseits reiner
+Wortebene (z. B. Links, Absenderauffälligkeiten, Formatierung) sowie eine
+saubere Evaluation mit Accuracy/Precision/Recall.
+
+
+------------------------------------------------------------------------
+2. WAHL DES DATENSATZES: ENRON SPAM CORPUS
+------------------------------------------------------------------------
+
+Ich habe mich für den Enron-Spam-Korpus entschieden (statt SpamAssassin).
+Der Datensatz basiert auf den durch die gerichtliche Aufarbeitung des
+Enron-Skandals öffentlich gewordenen Firmen-E-Mails, kombiniert mit
+gesammelten Spam-Nachrichten aus demselben Zeitraum (Metsis,
+Androutsopoulos & Paliouras, 2006). Er ist frei verfügbar, gut
+dokumentiert und in der Forschung etabliert.
+
+Nach der Bereinigung (fehlende Werte entfernt, Betreff + Nachrichtentext
+zu einem Volltextfeld zusammengeführt) bleiben 33.665 E-Mails übrig:
+17.120 Spam-Nachrichten und 16.545 legitime Nachrichten – eine fast
+ausgeglichene Verteilung (50,9 % zu 49,1 %). Das war mir wichtig, damit
+die Klassifikatoren nicht einfach durch Raten der Mehrheitsklasse eine
+hohe Accuracy erreichen können.
+
+Ausführung:
+    python3 scripts/download_data.py
+    -> lädt den Datensatz herunter, bereinigt ihn und erzeugt data/emails.csv
+
+
+------------------------------------------------------------------------
+3. WORTLISTEN-ANALYSE (vor der Klassifikation)
+------------------------------------------------------------------------
+
+Wie in der Aufgabenstellung gefordert, habe ich vor der eigentlichen
+Klassifikation eine eigene Wortlisten-Analyse durchgeführt: Alle Texte
+werden tokenisiert, in Kleinschreibung normalisiert und von englischen
+Stoppwörtern befreit. Anschließend zähle ich die Worthäufigkeiten
+getrennt nach Spam und Ham und berechne für jeden Begriff einen
+"Spam-Anteil" (welcher Anteil seines Vorkommens auf Spam-Mails entfällt).
+
+Das Ergebnis war für mich überraschend aufschlussreich: Die Begriffe mit
+dem höchsten Spam-Anteil sind klassische Werbe-/Pharma-Vokabeln ("pills",
+"viagra", "cialis"). Die stärksten Indikatoren für legitime Mails sind
+aber NICHT allgemeine Geschäftssprache, sondern fast ausschließlich
+firmenspezifische Begriffe von Enron selbst ("enron", "ect" als interne
+Abteilungsabkürzung, "dynegy" als Wettbewerber, Mitarbeiternamen wie
+"kaminski"). Das zeigt mir, dass ein Teil der hohen Erkennungsgenauigkeit
+später eher auf "Enron-Jargon vs. generischer Spam" zurückgeht als auf
+wirklich allgemeingültige Phishing-Merkmale – ein Punkt, den ich in der
+Diskussion der Ergebnisse kritisch reflektiert habe (Dataset Bias).
+
+Die komplette Liste wird als CSV exportiert (output/wordlist_analysis.csv)
+und die wichtigsten Begriffe als Balkendiagramm visualisiert
+(output/figures/wordlists.png).
+
+
+------------------------------------------------------------------------
+4. FEATURE-EXTRAKTION: TF-IDF + ZUSÄTZLICHE MERKMALE
+------------------------------------------------------------------------
+
+Für die eigentliche Textrepräsentation verwende ich TF-IDF (Term
+Frequency – Inverse Document Frequency), das Wörter, die in fast allen
+Mails vorkommen, automatisch niedriger gewichtet als seltene,
+dokumentspezifische Begriffe. Konfiguration:
+- max_features=5000 (nur die 5000 häufigsten Begriffe/Phrasen)
+- ngram_range=(1,2): auch Zweiwortkombinationen wie "click here"
+- sublinear_tf=True: logarithmische Skalierung gegen Dominanz sehr
+  häufiger Wörter
+- min_df=2: Begriffe, die nur einmal vorkommen, werden ignoriert
+
+Da die Aufgabenstellung explizit zusätzliche Erkennungsmerkmale jenseits
+der Wortebene fordert (Auffälligkeiten in Links, Absenderadressen,
+Formatierung), habe ich einen eigenen Transformer
+(StructuralFeatureExtractor) geschrieben, der sechs strukturelle
+Merkmale pro Mail berechnet:
+- Anzahl enthaltener URLs
+- Anzahl Ausrufezeichen (Dringlichkeitssignal)
+- Ziffernanteil am Gesamttext
+- Anzahl Währungssymbole ($, €, £)
+- Anteil Großbuchstaben
+- Häufigkeit verdächtiger Schlüsselwörter (click, verify, free, ...)
+
+Absenderadressen konnte ich nicht auswerten, weil der Enron-Korpus keine
+vollständigen E-Mail-Header enthält (nur Betreff + Text) – das habe ich
+als Einschränkung in der Diskussion benannt.
+
+Beide Merkmalsgruppen (TF-IDF + strukturelle Merkmale) führe ich über
+eine FeatureUnion zu einem gemeinsamen Merkmalsvektor zusammen und
+kapsle alles zusammen mit dem jeweiligen Klassifikator in einer
+scikit-learn-Pipeline. Das stellt sicher, dass der TF-IDF-Vektorisierer
+nur auf den Trainingsdaten angepasst wird (kein Data Leakage).
+
+
+------------------------------------------------------------------------
+5. AUSWAHL DER KLASSIFIKATOREN
+------------------------------------------------------------------------
+
+Ich vergleiche bewusst sechs unterschiedliche Algorithmen, um verschiedene
+Modellfamilien abzudecken:
+
+a) Logistic Regression – lineares Basismodell, schnell, gut interpretierbar
+b) Naive Bayes (MultinomialNB) – klassischer Ansatz für Spam-Filter
+c) Random Forest – Ensemble aus vielen Entscheidungsbäumen (Bagging)
+d) Decision Tree – einzelner Baum als Vergleichsbasis zum Random Forest
+e) Gradient Boosting – sequenzielles Ensemble-Verfahren (Boosting)
+f) Linear SVM – Max-Margin-Klassifikator, hat kein predict_proba,
+   weshalb für ihn kein AUC-Wert berechnet werden kann
+
+
+------------------------------------------------------------------------
+6. EVALUIERUNG: METRIKEN UND KREUZVALIDIERUNG
+------------------------------------------------------------------------
+
+Die Daten teile ich im Verhältnis 80:20 in Training und Test auf
+(stratifiziert, damit die Klassenverteilung in beiden Teilen gleich
+bleibt). Das Testset umfasst 6.733 E-Mails.
+
+Als Metriken verwende ich Accuracy, Precision, Recall, F1-Score und
+AUC-ROC. F1 ist meine Hauptmetrik, weil sie Precision und Recall
+ausbalanciert – wichtig, weil sowohl blockierte legitime Mails
+(False Positives) als auch übersehene Phishing-Mails (False Negatives)
+echte Kosten verursachen.
+
+Für den besten Klassifikator führe ich zusätzlich eine 5-fache
+Kreuzvalidierung durch, um auszuschließen, dass das gute Ergebnis nur
+an einer günstigen Zufallsaufteilung der Daten liegt.
+
+Ergebnis: Logistic Regression schneidet mit F1 = 0,990 am besten ab
+(Accuracy 0,990, AUC 0,999), dicht gefolgt von linearer SVM (0,990)
+und Random Forest (0,987). Der einzelne Decision Tree bildet mit 0,953
+das Schlusslicht – das zeigt mir den klaren Mehrwert von Ensemble-Methoden
+bei hochdimensionalen Textdaten. Die Kreuzvalidierung bestätigt die
+Stabilität: F1 = 0,980 ± 0,007.
+
+
+------------------------------------------------------------------------
+7. KRITISCHE EINORDNUNG DER ERGEBNISSE
+------------------------------------------------------------------------
+
+Die sehr hohen Werte (um 99 %) wollte ich nicht unkommentiert stehen
+lassen. Wie in Punkt 3 beschrieben, zeigt die Wortlisten-Analyse, dass
+ein erheblicher Teil der Trennschärfe auf die thematische Eigenheit des
+Enron-Korpus zurückgeht (Enron-Jargon vs. generischer Spam) und nicht
+ausschließlich auf allgemeingültige Phishing-Merkmale. Hinzu kommt: der
+Korpus enthält keine vollständigen Header (keine SPF/DKIM/DMARC-Analyse
+möglich) und stammt aus den frühen 2000er-Jahren, bildet also keine
+modernen, KI-generierten Phishing-Texte ab. Außerdem handelt es sich um
+einen Spam- und nicht um einen reinen Phishing-Datensatz. Diese drei
+Punkte (Dataset Bias, fehlende Header, Alter des Korpus) habe ich in der
+Diskussion explizit als Grenzen meines Ansatzes benannt.
+
+
+------------------------------------------------------------------------
+8. VISUALISIERUNGEN UND GESPEICHERTE ERGEBNISSE
+------------------------------------------------------------------------
+
+output/figures/
+    label_distribution.png   - Klassenverteilung im Datensatz
+    wordlists.png             - Top-Begriffe Spam vs. legitim
+    metric_comparison.png     - Balkendiagramm aller Metriken
+    confusion_matrices.png    - Konfusionsmatrizen aller 6 Klassifikatoren
+    roc_curves.png             - ROC-Kurven mit AUC-Werten
+
+output/reports/
+    summary.json               - Gesamtzusammenfassung der Pipeline
+    <Klassifikator>_report.json - Detailreport je Klassifikator
+
+output/comparison_table.csv  - Vergleichstabelle aller Klassifikatoren
+output/wordlist_analysis.csv - vollständige Wortlisten-Auswertung
+
+models/*.pkl  - alle trainierten Modelle (per joblib gespeichert)
+
+
+------------------------------------------------------------------------
+9. TESTS
+------------------------------------------------------------------------
+
+Ich habe 37 automatisierte Tests (pytest) geschrieben, die prüfen:
+- dass der Datensatz korrekt geladen wird und plausibel groß/balanciert ist
+- dass die Wortlisten-Analyse korrekt funktioniert
+- dass die strukturellen Zusatzmerkmale richtig berechnet werden
+  (z. B. Linkzählung, Ausrufezeichen)
+- dass die Pipeline (TF-IDF + Strukturmerkmale + Klassifikator) korrekt
+  aufgebaut ist und sinnvolle Vorhersagen liefert
+- dass alle Output-Dateien tatsächlich erzeugt wurden
+
+Ausführung:
+    python3 -m pytest tests/ -v
+
+
+------------------------------------------------------------------------
+10. VOLLSTÄNDIGE AUSFÜHRUNG DER PIPELINE
+------------------------------------------------------------------------
+
+Schritt 1 - Abhängigkeiten installieren:
+    pip3 install -r requirements.txt
+
+Schritt 2 - Datensatz herunterladen und bereinigen:
+    python3 scripts/download_data.py
+
+Schritt 3 - Komplette ML-Pipeline starten (Wortlisten-Analyse,
+            Feature-Extraktion, Training, Evaluation aller Klassifikatoren):
+    python3 main.py --ml
+
+Schritt 4 - Tests ausführen:
+    python3 -m pytest tests/ -v
+
+Alle Ergebnisse landen in output/, die trainierten Modelle in models/.

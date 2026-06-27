@@ -1,0 +1,38 @@
+{
+  "classifier": "Naive Bayes",
+  "metrics": {
+    "classifier": "Naive Bayes",
+    "accuracy": 0.966,
+    "precision": 0.9675,
+    "recall": 0.9655,
+    "f1": 0.9665,
+    "auc": 0.9874
+  },
+  "classification_report": {
+    "Legitim": {
+      "precision": 0.9644149577804584,
+      "recall": 0.9664551223934723,
+      "f1-score": 0.9654339622641509,
+      "support": 3309.0
+    },
+    "Spam/Phishing": {
+      "precision": 0.9675153643546971,
+      "recall": 0.9655373831775701,
+      "f1-score": 0.9665253617892121,
+      "support": 3424.0
+    },
+    "accuracy": 0.9659884152680825,
+    "macro avg": {
+      "precision": 0.9659651610675777,
+      "recall": 0.9659962527855213,
+      "f1-score": 0.9659796620266815,
+      "support": 6733.0
+    },
+    "weighted avg": {
+      "precision": 0.965991638622608,
+      "recall": 0.9659884152680825,
+      "f1-score": 0.9659889826078031,
+      "support": 6733.0
+    }
+  }
+}

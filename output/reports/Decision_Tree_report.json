@@ -1,0 +1,38 @@
+{
+  "classifier": "Decision Tree",
+  "metrics": {
+    "classifier": "Decision Tree",
+    "accuracy": 0.9513,
+    "precision": 0.9398,
+    "recall": 0.9661,
+    "f1": 0.9528,
+    "auc": 0.9634
+  },
+  "classification_report": {
+    "Legitim": {
+      "precision": 0.9638966697790228,
+      "recall": 0.9359323058325778,
+      "f1-score": 0.9497086783195339,
+      "support": 3309.0
+    },
+    "Spam/Phishing": {
+      "precision": 0.9397727272727273,
+      "recall": 0.9661214953271028,
+      "f1-score": 0.9527649769585254,
+      "support": 3424.0
+    },
+    "accuracy": 0.9512847170652012,
+    "macro avg": {
+      "precision": 0.951834698525875,
+      "recall": 0.9510269005798403,
+      "f1-score": 0.9512368276390296,
+      "support": 6733.0
+    },
+    "weighted avg": {
+      "precision": 0.951628679411942,
+      "recall": 0.9512847170652012,
+      "f1-score": 0.9512629285111136,
+      "support": 6733.0
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "classifier": "Linear SVM",
+  "metrics": {
+    "classifier": "Linear SVM",
+    "accuracy": 0.9896,
+    "precision": 0.9881,
+    "recall": 0.9915,
+    "f1": 0.9898,
+    "auc": "N/A"
+  },
+  "classification_report": {
+    "Legitim": {
+      "precision": 0.9912041249620868,
+      "recall": 0.9876095497129042,
+      "f1-score": 0.9894035725098396,
+      "support": 3309.0
+    },
+    "Spam/Phishing": {
+      "precision": 0.9880675203725262,
+      "recall": 0.9915303738317757,
+      "f1-score": 0.9897959183673469,
+      "support": 3424.0
+    },
+    "accuracy": 0.9896034457151344,
+    "macro avg": {
+      "precision": 0.9896358226673065,
+      "recall": 0.9895699617723399,
+      "f1-score": 0.9895997454385932,
+      "support": 6733.0
+    },
+    "weighted avg": {
+      "precision": 0.9896090359802577,
+      "recall": 0.9896034457151344,
+      "f1-score": 0.9896030960827052,
+      "support": 6733.0
+    }
+  }
+}
